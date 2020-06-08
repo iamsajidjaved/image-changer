@@ -1,51 +1,36 @@
 <?php
-$error = false;
-$success = false;
-$successMessage = "";
-$errorMessage = "";
+require_once 'vendor/autoload.php';
+use Gregwar\Image\Image;
+
+$images = glob("images/*.{jpg,JPG,jpeg,JPEG,png,PNG}", GLOB_BRACE);
+
+$status = '';
+$message = "";
+
 if (isset($_POST["submit"])) {
-    $target_files = "images/" . basename($_FILES["newimage"]["name"]);
-    $imageFileType = strtolower(pathinfo($target_files, PATHINFO_EXTENSION));
-    if ($_FILES["newimage"]["size"] > 500000) {
-        $errorMessage = "Sorry, your file is too large.";
-        $success = false;
-        $error = true;
-    }
+    $old_image = $_POST['oldimage'];
+    $target_dir = 'dummy/';
+    $target_file = $target_dir . basename($_FILES["newimage"]["name"]);
+    $post_tmp_img = $_FILES["newimage"]["tmp_name"];
+    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    if ($_FILES["newimage"]["size"] < 500000) {
+        if (move_uploaded_file($post_tmp_img, $target_file)) {
+            Image::open($target_file)
+                ->negate()
+                ->save('images/' . $old_image);
 
-//Allow certain file formats
-    if ($imageFileType != "png") {
-        $errorMessage = "Sorry, only  PNG FILE are allowed.";
-        $success = false;
-        $error = true;
-
-    }
-    if ($_FILES["newimage"]["size"] == 0) {
-        $errorMessage = "Please a Upload Image";
-        $success = false;
-        $error = true;
-    }
-
-    $target_dir = "images/";
-    $target_file = $target_dir . $_POST['oldimage'];
-    if (file_exists($target_file) && $_FILES['newimage']['size'] != 0 && $error == false) {
-
-        if (move_uploaded_file($_FILES["newimage"]["tmp_name"], "images/" . $_POST['oldimage']));
-        {
-            $successMessage = "Image successfully changed";
-            $success = true;
-            $error = false;
+            $status = 1;
+            $message = "Image has been overwriten successfully!";
+        } else {
+            $status = 0;
+            $message = "Image is failed to overwrite!";
         }
-
-    } else {
-
-        $success = false;
-        $error = true;
-    }
-
+    }else {
+      $status = 0;
+      $message = "Image is failed to overwrite because size is bigger than 5mb";
+  }
 }
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,66 +42,46 @@ if (isset($_POST["submit"])) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 </head>
+
 <body>
-
-
-<div class="container mt-5">
-
-
-
-  <div class="row">
-     <div class="col-md-8 offset-2">
-     <h1 class="text-center">Easy Image Changer</h1>
-<form method="POST" enctype="multipart/form-data" action="">
-
-  <div class="card">
-
-    <div class="card-body">
-
-
-<div class="form-group">
-  <label>Select Image to Change</label>
-    <?php
-
-$images = glob("images/*.{png}", GLOB_BRACE);
-echo '<select name="oldimage" class="form-control">';
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col-md-8 offset-2">
+        <h1 class="text-center">Easy Image Changer</h1>
+        <form method="POST" enctype="multipart/form-data" action="">
+          <div class="card">
+            <div class="card-body">
+              <?php
+if ($status == 1) {
+    echo '<div class="alert alert-success">' . $message . '</div>';
+}if ($status == 0 && $message != '') {
+    echo '<div class="alert alert-danger">' . $message . '</div>';
+}
+?>
+                            <div class="form-group">
+                              <label>Select the Image which you want to change:</label>
+                              <select name="oldimage" class="form-control">
+                                <?php
 foreach ($images as $image) {
     echo '<option value="' . basename($image) . '">' . basename($image) . '</option>';
-
-}
-
-echo '</select>';
-
-?>
-</div>
-<div class="form-group">
-  <label>Upload new image</label>
-    <input id="file-input" name="newimage" type="file"/>
-</div>
-<div class="form-group mb-5">
-  <input type="submit" class="btn btn-success" name="submit" value="Change a image">
-  </div>
-
-</div>
-<?php
-if ($error == true) {
-    echo $result = '<div class="alert alert-danger">' . $errorMessage . '</div>';
-} else {
-
-}
-if ($success == true) {
-    echo $result = '<div class="alert alert-success">' . $successMessage . '</div>';
-} else {
-
 }
 ?>
-</div>
-</div>
-</form>
-</div>
-</div>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Upload new image</label>
+                <input id="file-input" name="newimage" type="file" accept="image/*"/>
+              </div>
+              <div class="form-group mb-5">
+                <input type="submit" class="btn btn-success" name="submit" value="CHANGE IMAGE NOW">
+              </div>
+            </div>
+          </div>
+      </div>
+      </form>
+    </div>
   </div>
-</div>
-
+  </div>
+  </div>
 </body>
 </html>
